@@ -214,7 +214,14 @@ const zh: DeepStringRecord = {
     uploadFailed: "上传失败",
     configureUploadUrlForImages: "请在设置中配置附件上传地址以同步图片",
     configureUploadUrlForPdfs: "请配置上传地址以同步 PDF 嵌入",
+    pullNewPagesComplete: "拉取新页面完成：已创建 {{created}} 个，{{errors}} 个错误",
+    pullNewPagesFailed: "拉取新页面失败：{{error}}",
+    couldNotFetchChildren: "无法获取子页面 {{id}}：{{error}}",
+    checkingPages: "检查页面中... {{title}}",
+    createdFromNotion: "已从 Notion 创建：{{path}}",
+    failedToCreatePage: "创建页面失败 {{title}}：{{error}}",
+    failedToUpload: "上传失败 {{name}}：{{error}}",
   },
-} satisfies DeepStringRecord;
+} as const satisfies DeepStringRecord;
 
 export default zh;

@@ -102,7 +102,7 @@ export class AttachmentUploader {
       } catch (error) {
         this.stateManager.addLog(
           "error",
-          `Failed to upload ${file.name}: ${errMsg(error)}`,
+          t("sync.failedToUpload", { name: file.name, error: errMsg(error) }),
           file.path
         );
       }
@@ -127,7 +127,7 @@ export class AttachmentUploader {
       } catch (error) {
         this.stateManager.addLog(
           "error",
-          `Failed to upload ${file.name}: ${errMsg(error)}`,
+          t("sync.failedToUpload", { name: file.name, error: errMsg(error) }),
           file.path
         );
       }

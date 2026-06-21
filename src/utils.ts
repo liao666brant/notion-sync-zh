@@ -48,5 +48,5 @@ export function sanitizeFileName(name: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .substring(0, 100)
-    || t("utils.untitled");
+    || "Untitled";
 }

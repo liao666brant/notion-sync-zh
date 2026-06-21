@@ -5,25 +5,43 @@ import type { DeepStringRecord } from "./en";
 type Locale = typeof en;
 type LocaleMap = Record<string, DeepStringRecord>;
 
-const locales: LocaleMap = { en, zh: zh as DeepStringRecord };
+const locales: LocaleMap = { en, zh };
 
 /** Current locale — detected from Obsidian on first access, defaults to English */
 let currentLocale: DeepStringRecord = en;
+let detected = false;
 
 /**
- * Get the effective locale from Obsidian's language setting.
- * Called lazily on first t() invocation.
+ * Type-safe access to Obsidian's global `app.vault.config.language`.
+ * Obsidian injects `window.app` at runtime but its type isn't in the SDK.
+ */
+function getObsidianLanguage(): string {
+  try {
+    const w = window as unknown as { app?: { vault?: { config?: { language?: string } } } };
+    return w.app?.vault?.config?.language ?? "en";
+  } catch {
+    return "en";
+  }
+}
+
+/**
+ * Type-safe two-level lookup on a DeepStringRecord.
+ * Returns the string value at `obj[section][field]`, or undefined if missing.
+ */
+function lookupField(obj: DeepStringRecord, section: string, field: string): string | undefined {
+  const group = obj[section];
+  if (typeof group !== "object" || group === null) return undefined;
+  const val = (group as Record<string, unknown>)[field];
+  return typeof val === "string" ? val : undefined;
+}
+
+/**
+ * Detect the effective locale from Obsidian's language setting.
+ * Falls back to English on any failure.
  */
 function detectLocale(): DeepStringRecord {
-  // Obsidian exposes the UI language on the global `app` object.
-  // Falls back to English if detection fails.
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lang = (window as any)?.app?.vault?.config?.language ?? "en";
-    return locales[lang] ?? en;
-  } catch {
-    return en;
-  }
+  const lang = getObsidianLanguage();
+  return locales[lang] ?? en;
 }
 
 /**
@@ -45,26 +63,34 @@ export function t(key: `utils.${keyof Locale["utils"]}`, vars?: Record<string, s
 export function t(key: `sync.${keyof Locale["sync"]}`, vars?: Record<string, string | number>): string;
 export function t(key: string, vars?: Record<string, string | number>): string;
 export function t(key: string, vars?: Record<string, string | number>): string {
-  // Lazy locale detection
-  if (currentLocale === en) {
+  // Lazy locale detection (once, cached via boolean flag)
+  if (!detected) {
+    detected = true;
     currentLocale = detectLocale();
   }
 
   const [section, field] = key.split(".", 2);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const value = (currentLocale as any)?.[section]?.[field] ?? key;
+  const value = lookupField(currentLocale, section, field)
+    ?? lookupField(en, section, field)
+    ?? key;
 
   if (!vars) return value;
 
+  // Escape '$' in replacement values to prevent String.replace backreferences
   return Object.entries(vars).reduce(
-    (str, [k, v]) => str.replace(new RegExp(`\\{\\{${k}\\}\\}`, "g"), String(v)),
-    value as string
+    (str, [k, v]) => str.replace(
+      new RegExp(`\\{\\{${k}\\}\\}`, "g"),
+      String(v).replace(/\$/g, "$$$$"),
+    ),
+    value,
   );
 }
 
 /**
  * Force a locale (useful for testing or user override).
+ * Resets the detection flag so the explicit locale persists.
  */
 export function setLocale(lang: string): void {
+  detected = true;
   currentLocale = locales[lang] ?? en;
 }

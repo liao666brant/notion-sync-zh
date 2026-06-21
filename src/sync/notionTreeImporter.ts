@@ -67,12 +67,12 @@ export class NotionTreeImporter {
       created = result.created;
       errors = result.errors;
 
-      const msg = `Pull new pages complete: ${created} created, ${errors} errors`;
+      const msg = t("sync.pullNewPagesComplete", { created, errors });
       stateManager.addLog("info", msg);
       new Notice(msg);
     } catch (e) {
-      stateManager.addLog("error", `Pull new pages failed: ${errMsg(e)}`);
-      new Notice(`Pull new pages failed: ${errMsg(e)}`);
+      stateManager.addLog("error", t("sync.pullNewPagesFailed", { error: errMsg(e) }));
+      new Notice(t("sync.pullNewPagesFailed", { error: errMsg(e) }));
     }
 
     return { created, errors };
@@ -97,7 +97,7 @@ export class NotionTreeImporter {
     try {
       childPages = await notion.getChildPages(notionPageId);
     } catch (e) {
-      stateManager.addLog("warn", `Could not fetch children of ${notionPageId}: ${errMsg(e)}`);
+      stateManager.addLog("warn", t("sync.couldNotFetchChildren", { id: notionPageId, error: errMsg(e) }));
       return { created, errors };
     }
 
@@ -128,7 +128,7 @@ export class NotionTreeImporter {
       // Report progress
       if (total > 0) {
         const pct = Math.round((i / total) * 100);
-        progress.report(`Checking pages... ${child.title}`, pct);
+        progress.report(t("sync.checkingPages", { title: child.title }), pct);
       }
 
       // Check if this page has further child pages (to decide folder mapping)
@@ -216,11 +216,11 @@ export class NotionTreeImporter {
             fileName: safeTitle,
           });
 
-          stateManager.addLog("info", `Created from Notion: ${filePath}`, filePath);
+          stateManager.addLog("info", t("sync.createdFromNotion", { path: filePath }), filePath);
           created++;
         } catch (e) {
           errors++;
-          stateManager.addLog("error", `Failed to create page ${child.title}: ${errMsg(e)}`);
+          stateManager.addLog("error", t("sync.failedToCreatePage", { title: child.title, error: errMsg(e) }));
         }
       }
 

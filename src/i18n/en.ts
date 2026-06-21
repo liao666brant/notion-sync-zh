@@ -217,6 +217,13 @@ const en = {
     uploadFailed: "Upload failed",
     configureUploadUrlForImages: "Configure attachment upload URL in settings to sync images",
     configureUploadUrlForPdfs: "Configure upload URL for PDF embeds",
+    pullNewPagesComplete: "Pull new pages complete: {{created}} created, {{errors}} errors",
+    pullNewPagesFailed: "Pull new pages failed: {{error}}",
+    couldNotFetchChildren: "Could not fetch children of {{id}}: {{error}}",
+    checkingPages: "Checking pages... {{title}}",
+    createdFromNotion: "Created from Notion: {{path}}",
+    failedToCreatePage: "Failed to create page {{title}}: {{error}}",
+    failedToUpload: "Failed to upload {{name}}: {{error}}",
   },
 } as const satisfies DeepStringRecord;
 
