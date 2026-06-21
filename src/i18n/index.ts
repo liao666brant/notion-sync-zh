@@ -1,3 +1,4 @@
+import { getLanguage } from "obsidian";
 import en from "./en";
 import zh from "./zh";
 import type { DeepStringRecord } from "./en";
@@ -12,16 +13,29 @@ let currentLocale: DeepStringRecord = en;
 let detected = false;
 
 /**
- * Type-safe access to Obsidian's global `app.vault.config.language`.
- * Obsidian injects `window.app` at runtime but its type isn't in the SDK.
+ * Type-safe access to Obsidian's configured app language.
+ * Returns undefined if the config isn't available yet (early plugin load).
  */
-function getObsidianLanguage(): string {
+function getObsidianLanguage(): string | undefined {
   try {
-    const w = window as unknown as { app?: { vault?: { config?: { language?: string } } } };
-    return w.app?.vault?.config?.language ?? "en";
+    const lang = getLanguage?.();
+    if (lang) return lang;
   } catch {
-    return "en";
+    // Older Obsidian builds may not expose getLanguage.
   }
+
+  try {
+    const w = window as unknown as { app?: { vault?: { config?: { language?: string; locale?: string } } } };
+    return w.app?.vault?.config?.language ?? w.app?.vault?.config?.locale;
+  } catch {
+    return undefined;
+  }
+}
+
+function normalizeLanguage(lang: string): string {
+  const code = lang.trim().toLowerCase().replace(/_/g, "-");
+  if (code === "zh" || code.startsWith("zh-")) return "zh";
+  return code.split("-", 1)[0] || "en";
 }
 
 /**
@@ -37,11 +51,12 @@ function lookupField(obj: DeepStringRecord, section: string, field: string): str
 
 /**
  * Detect the effective locale from Obsidian's language setting.
- * Falls back to English on any failure.
+ * Returns undefined if config isn't available yet (allows retry on next call).
  */
-function detectLocale(): DeepStringRecord {
+function detectLocale(): DeepStringRecord | undefined {
   const lang = getObsidianLanguage();
-  return locales[lang] ?? en;
+  if (lang === undefined) return undefined;
+  return locales[normalizeLanguage(lang)] ?? en;
 }
 
 /**
@@ -63,10 +78,13 @@ export function t(key: `utils.${keyof Locale["utils"]}`, vars?: Record<string, s
 export function t(key: `sync.${keyof Locale["sync"]}`, vars?: Record<string, string | number>): string;
 export function t(key: string, vars?: Record<string, string | number>): string;
 export function t(key: string, vars?: Record<string, string | number>): string {
-  // Lazy locale detection (once, cached via boolean flag)
+  // Lazy locale detection — retry until Obsidian config is available
   if (!detected) {
-    detected = true;
-    currentLocale = detectLocale();
+    const locale = detectLocale();
+    if (locale !== undefined) {
+      detected = true;
+      currentLocale = locale;
+    }
   }
 
   const [section, field] = key.split(".", 2);
@@ -92,5 +110,5 @@ export function t(key: string, vars?: Record<string, string | number>): string {
  */
 export function setLocale(lang: string): void {
   detected = true;
-  currentLocale = locales[lang] ?? en;
+  currentLocale = locales[normalizeLanguage(lang)] ?? en;
 }
