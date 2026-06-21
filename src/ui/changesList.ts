@@ -1,5 +1,6 @@
 import { setIcon } from "obsidian";
 import type { PendingChange } from "../sync/changeScanner";
+import { t } from "../i18n";
 
 export interface ChangesListCallbacks {
   /** Compute the current pending changes. */
@@ -24,7 +25,7 @@ export class ChangesList {
   mount(parent: HTMLElement): void {
     const card = parent.createDiv({ cls: "notion-sync-card-section notion-sync-changes-card" });
     const header = card.createDiv({ cls: "notion-sync-changes-header" });
-    header.createEl("p", { text: "Changes", cls: "notion-sync-card-section-title" });
+    header.createEl("p", { text: t("panel.changes"), cls: "notion-sync-card-section-title" });
     this.countEl = header.createSpan({ cls: "notion-sync-changes-count", text: "0" });
     this.listEl = card.createDiv({ cls: "notion-sync-changes-list" });
     void this.refresh();
@@ -41,7 +42,7 @@ export class ChangesList {
 
     listEl.empty();
     if (changes.length === 0) {
-      listEl.createDiv({ cls: "notion-sync-changes-empty", text: "Everything is synced" });
+      listEl.createDiv({ cls: "notion-sync-changes-empty", text: t("panel.everythingSynced") });
       return;
     }
 
@@ -56,7 +57,7 @@ export class ChangesList {
     row.createSpan({
       cls: `notion-sync-change-status is-${change.status}`,
       text: change.status === "new" ? "U" : "M",
-      attr: { "aria-label": change.status === "new" ? "Not synced yet" : "Modified since last sync" },
+      attr: { "aria-label": change.status === "new" ? t("panel.notSyncedYet") : t("panel.modifiedSinceLastSync") },
     });
 
     row.createSpan({
@@ -71,7 +72,7 @@ export class ChangesList {
 
     const pushBtn = row.createEl("button", {
       cls: "notion-sync-change-push",
-      attr: { "aria-label": `Push ${change.name} to Notion` },
+      attr: { "aria-label": t("panel.pushFileToNotion", { name: change.name }) },
     });
     setIcon(pushBtn, "upload");
     pushBtn.addEventListener("click", (e) => {

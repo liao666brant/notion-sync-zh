@@ -1,5 +1,6 @@
 import { App, Modal } from "obsidian";
 import type { StateManager } from "../stateManager";
+import { t } from "../i18n";
 
 /**
  * Modal that displays the sync log with filtering, clearing, and auto-scroll.
@@ -19,19 +20,19 @@ export class SyncLogModal extends Modal {
     const logs = this.stateManager.getLogs();
 
     // Header
-    contentEl.createEl("h2", { text: "Sync log" });
+    contentEl.createEl("h2", { text: t("log.title") });
 
     // Filter bar
     const filterBar = contentEl.createDiv({ cls: "sync-log-filter" });
-    this.createFilterButton(filterBar, "All", "all");
-    this.createFilterButton(filterBar, "Info", "info");
-    this.createFilterButton(filterBar, "Warnings", "warn");
-    this.createFilterButton(filterBar, "Errors", "error");
+    this.createFilterButton(filterBar, t("log.all"), "all");
+    this.createFilterButton(filterBar, t("log.info"), "info");
+    this.createFilterButton(filterBar, t("log.warnings"), "warn");
+    this.createFilterButton(filterBar, t("log.errors"), "error");
 
     const clearBtn = filterBar.createEl("button", {
-      text: "Clear",
+      text: t("log.clear"),
       cls: "sync-log-filter-btn sync-log-clear-btn",
-      attr: { "aria-label": "Clear all log entries" },
+      attr: { "aria-label": t("log.clearAll") },
     });
     clearBtn.addEventListener("click", () => {
       this.stateManager.clearLogs();
@@ -52,7 +53,7 @@ export class SyncLogModal extends Modal {
     const infos = logs.filter((l) => l.level === "info").length;
     const warns = logs.filter((l) => l.level === "warn").length;
     const errors = logs.filter((l) => l.level === "error").length;
-    statsEl.textContent = `Total: ${logs.length} entries | ${infos} info, ${warns} warnings, ${errors} errors`;
+    statsEl.textContent = t("log.stats", { total: logs.length, info: infos, warns, errors });
   }
 
   private createFilterButton(
@@ -81,7 +82,7 @@ export class SyncLogModal extends Modal {
 
     if (filtered.length === 0) {
       container.createEl("p", {
-        text: "No log entries.",
+        text: t("log.noEntries"),
         cls: "sync-log-empty",
       });
       return;

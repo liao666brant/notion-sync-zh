@@ -2,6 +2,7 @@ import type { App, TFile } from "obsidian";
 import type { NotionBlock, NotionBlockContent } from "./types";
 import type { StateManager } from "./stateManager";
 import { EMBED_PLACEHOLDER_PREFIX, errMsg } from "./utils";
+import { t } from "./i18n";
 import { AttachmentResolver } from "./attachments/attachmentResolver";
 import { UploadClient } from "./attachments/uploadClient";
 import { AttachmentBlockFactory } from "./attachments/attachmentBlockFactory";
@@ -72,8 +73,8 @@ export class AttachmentUploader {
   ): Promise<NotionBlock> {
     const file = this.resolver.find(filename, sourceFilePath);
     if (!file) {
-      this.stateManager.addLog("warn", `Attachment not found: ${filename}`, sourceFilePath);
-      return this.blocks.placeholder(filename, "File not found in vault");
+      this.stateManager.addLog("warn", t("sync.attachmentNotFound", { name: filename }), sourceFilePath);
+      return this.blocks.placeholder(filename, t("sync.fileNotFoundInVault"));
     }
 
     const ext = file.extension.toLowerCase();
@@ -86,7 +87,7 @@ export class AttachmentUploader {
       return this.handlePdf(file);
     }
 
-    return this.blocks.placeholder(filename, `Unsupported embed type: .${ext}`);
+    return this.blocks.placeholder(filename, t("sync.unsupportedEmbedType", { ext }));
   }
 
   /**
@@ -110,8 +111,8 @@ export class AttachmentUploader {
     return this.blocks.placeholder(
       file.name,
       this.uploader.configured
-        ? "Upload failed"
-        : "Configure attachment upload URL in settings to sync images"
+        ? t("sync.uploadFailed")
+        : t("sync.configureUploadUrlForImages")
     );
   }
 
@@ -132,6 +133,6 @@ export class AttachmentUploader {
       }
     }
 
-    return this.blocks.placeholder(file.name, "Configure upload URL for PDF embeds");
+    return this.blocks.placeholder(file.name, t("sync.configureUploadUrlForPdfs"));
   }
 }

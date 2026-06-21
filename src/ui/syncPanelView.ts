@@ -2,6 +2,7 @@ import { ItemView, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type NotionSyncPlugin from "../main";
 import { SyncMode } from "../types";
 import { ChangesList } from "./changesList";
+import { t } from "../i18n";
 
 export const SYNC_PANEL_VIEW_TYPE = "notion-sync-panel";
 
@@ -42,7 +43,7 @@ export class SyncPanelView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "Notion sync";
+    return t("panel.title");
   }
 
   getIcon(): string {
@@ -90,7 +91,7 @@ export class SyncPanelView extends ItemView {
     // ── Header & Status Brand ────────────────────────────────
     const header = root.createDiv({ cls: "notion-sync-header" });
     const brand = header.createDiv({ cls: "notion-sync-brand" });
-    brand.createEl("h3", { text: "Notion sync" });
+    brand.createEl("h3", { text: t("panel.title") });
     this.badgeEl = header.createDiv();
     this.updateStatusBadge();
 
@@ -100,10 +101,10 @@ export class SyncPanelView extends ItemView {
     // Primary Action (Push Vault)
     const pushBtn = actionsCard.createEl("button", {
       cls: "notion-sync-btn-primary",
-      attr: { "aria-label": "Push: sync entire vault to Notion" }
+      attr: { "aria-label": t("panel.pushVaultTooltip") }
     });
     setIcon(pushBtn, "upload-cloud");
-    pushBtn.createSpan({ text: "Push vault to Notion" });
+    pushBtn.createSpan({ text: t("panel.pushVaultLabel") });
     pushBtn.addEventListener("click", () => {
       void this.runAction(() => this.plugin.syncFullVaultPublic());
     });
@@ -111,19 +112,19 @@ export class SyncPanelView extends ItemView {
     // Action Grid for quick actions
     const grid = actionsCard.createDiv({ cls: "notion-sync-action-grid" });
 
-    this.addGridBtn(grid, "refresh-cw", "Sync Changed", "Push: Sync changed files to Notion", () => {
+    this.addGridBtn(grid, "refresh-cw", t("panel.syncChanged"), t("panel.syncChangedTooltip"), () => {
       void this.runAction(() => this.plugin.syncIncrementalPublic());
     });
 
-    this.addGridBtn(grid, "file-up", "Push Note", "Push: Sync current note to Notion", () => {
+    this.addGridBtn(grid, "file-up", t("panel.pushNote"), t("panel.pushNoteTooltip"), () => {
       void this.runAction(() => this.plugin.syncCurrentFilePublic());
     });
 
-    this.addGridBtn(grid, "download-cloud", "Pull All", "Pull: All notes from Notion", () => {
+    this.addGridBtn(grid, "download-cloud", t("panel.pullAll"), t("panel.pullAllTooltip"), () => {
       void this.runAction(() => this.plugin.pullAllPublic());
     });
 
-    this.addGridBtn(grid, "folder-down", "Pull New", "Pull new pages from Notion", () => {
+    this.addGridBtn(grid, "folder-down", t("panel.pullNew"), t("panel.pullNewTooltip"), () => {
       void this.runAction(() => this.plugin.pullNewPagesPublic());
     });
 
@@ -142,22 +143,22 @@ export class SyncPanelView extends ItemView {
 
     const filesCard = statsContainer.createDiv({ cls: "notion-sync-stat-card" });
     this.filesCountEl = filesCard.createDiv({ cls: "notion-sync-stat-val" });
-    filesCard.createDiv({ cls: "notion-sync-stat-lbl", text: "Files" });
+    filesCard.createDiv({ cls: "notion-sync-stat-lbl", text: t("panel.files") });
 
     const foldersCard = statsContainer.createDiv({ cls: "notion-sync-stat-card" });
     this.foldersCountEl = foldersCard.createDiv({ cls: "notion-sync-stat-val" });
-    foldersCard.createDiv({ cls: "notion-sync-stat-lbl", text: "Folders" });
+    foldersCard.createDiv({ cls: "notion-sync-stat-lbl", text: t("panel.folders") });
 
     // ── Mode selector card ─────────────────────────────────────
     const modeCard = root.createDiv({ cls: "notion-sync-card-section" });
-    modeCard.createEl("p", { text: "Auto sync mode", cls: "notion-sync-card-section-title" });
+    modeCard.createEl("p", { text: t("panel.autoSyncMode"), cls: "notion-sync-card-section-title" });
 
     const selectWrapper = modeCard.createDiv({ cls: "notion-sync-select-wrapper" });
     const modeSelect = selectWrapper.createEl("select", { cls: "notion-sync-select" });
     const options: [SyncMode, string][] = [
-      [SyncMode.Manual, "Manual"],
-      [SyncMode.OnSave, "On save"],
-      [SyncMode.Scheduled, "Scheduled"],
+      [SyncMode.Manual, t("panel.manual")],
+      [SyncMode.OnSave, t("panel.onSave")],
+      [SyncMode.Scheduled, t("panel.scheduled")],
     ];
     for (const [value, label] of options) {
       const opt = modeSelect.createEl("option", { text: label, value });
@@ -176,11 +177,11 @@ export class SyncPanelView extends ItemView {
     // Interval picker (only visible in Scheduled mode)
     if (this.plugin.settings.syncMode === SyncMode.Scheduled) {
       const intervalRow = modeCard.createDiv({ cls: "notion-sync-mode-row" });
-      intervalRow.createEl("span", { text: "Every", cls: "notion-sync-interval-label" });
+      intervalRow.createEl("span", { text: t("panel.every"), cls: "notion-sync-interval-label" });
 
       const intervalSelect = intervalRow.createEl("select", { cls: "notion-sync-select" });
       for (const mins of [5, 10, 15, 30, 60]) {
-        const opt = intervalSelect.createEl("option", { text: `${mins} min`, value: String(mins) });
+        const opt = intervalSelect.createEl("option", { text: t("panel.minute", { n: mins }), value: String(mins) });
         if (this.plugin.settings.scheduledIntervalMinutes === mins) opt.selected = true;
       }
 
@@ -203,14 +204,14 @@ export class SyncPanelView extends ItemView {
       cls: "notion-sync-footer-btn",
     });
     setIcon(historyBtn, "history");
-    historyBtn.createSpan({ text: "History" });
+    historyBtn.createSpan({ text: t("panel.history") });
     historyBtn.addEventListener("click", () => this.plugin.openHistoryModal());
 
     const logBtn = footer.createEl("button", {
       cls: "notion-sync-footer-btn",
     });
     setIcon(logBtn, "list");
-    logBtn.createSpan({ text: "Logs" });
+    logBtn.createSpan({ text: t("panel.logs") });
     logBtn.addEventListener("click", () => this.plugin.openSyncLogPublic());
 
     this.refreshStatus();
@@ -234,8 +235,8 @@ export class SyncPanelView extends ItemView {
       const last = sm.lastFullSync;
       this.lastSyncEl.createSpan({
         text: last > 0
-          ? `Last sync: ${new Date(last).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-          : "Never synced",
+          ? t("panel.lastSync", { time: new Date(last).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+          : t("panel.neverSynced"),
       });
     }
   }
@@ -263,14 +264,14 @@ export class SyncPanelView extends ItemView {
     this.badgeEl.empty();
 
     let statusClass = "status-connected";
-    let statusText = "Ready";
+    let statusText = t("panel.ready");
 
     if (this.hasError) {
       statusClass = "status-error";
-      statusText = "Error";
+      statusText = t("panel.error");
     } else if (this.isSyncing) {
       statusClass = "status-syncing";
-      statusText = "Syncing";
+      statusText = t("panel.syncing");
     }
 
     this.badgeEl.className = `notion-sync-status-badge ${statusClass}`;

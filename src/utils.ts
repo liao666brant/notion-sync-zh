@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+
 /** Extract a human-readable message from an unknown error value */
 export function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
@@ -31,11 +33,11 @@ export function formatTimeAgo(timestamp: number): string {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffSecs < 60) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffSecs < 60) return t("utils.justNow");
+  if (diffMins < 60) return t("utils.minutesAgo", { n: diffMins });
+  if (diffHours < 24) return t("utils.hoursAgo", { n: diffHours });
+  if (diffDays === 1) return t("utils.yesterday");
+  if (diffDays < 7) return t("utils.daysAgo", { n: diffDays });
   return new Date(timestamp).toLocaleDateString();
 }
 
@@ -46,5 +48,5 @@ export function sanitizeFileName(name: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .substring(0, 100)
-    || "Untitled";
+    || t("utils.untitled");
 }

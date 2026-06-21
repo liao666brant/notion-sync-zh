@@ -10,6 +10,7 @@ import type { ProgressReporter } from "./progressReporter";
 import type { StatePersister } from "./statePersister";
 import type { SyncControl } from "./syncControl";
 import { errMsg, hashContent } from "../utils";
+import { t } from "../i18n";
 
 export interface PushServiceDeps {
   app: App;
@@ -43,8 +44,8 @@ export class PushService {
     let errors = 0;
 
     try {
-      stateManager.addLog("info", "Starting full vault sync");
-      new Notice("Starting full vault sync...");
+      stateManager.addLog("info", t("sync.startingFullVaultSync"));
+      new Notice(t("sync.startingFullVaultSyncNotice"));
 
       // Phase 1: Create folder hierarchy
       await this.deps.folders.syncAll();
@@ -55,7 +56,7 @@ export class PushService {
 
       for (let i = 0; i < mdFiles.length; i++) {
         if (control.aborted) {
-          stateManager.addLog("warn", "Sync aborted by user");
+          stateManager.addLog("warn", t("sync.syncAborted"));
           break;
         }
 
@@ -69,16 +70,16 @@ export class PushService {
 
           // Progress notification every 25 files
           if ((i + 1) % 25 === 0) {
-            new Notice(`Syncing... ${i + 1}/${total}`);
+            new Notice(t("sync.syncingProgress", { i: i + 1, total }));
           }
           // Report progress callback every 10 files
           if ((i + 1) % 10 === 0 || i === mdFiles.length - 1) {
             const pct = Math.round(((i + 1) / total) * 100);
-            progress.report(`Syncing ${i + 1}/${total}...`, pct);
+            progress.report(t("sync.syncingReport", { i: i + 1, total }), pct);
           }
         } catch (error) {
           errors++;
-          stateManager.addLog("error", `Failed to sync: ${errMsg(error)}`, file.path);
+          stateManager.addLog("error", t("sync.failedToSync", { error: errMsg(error) }), file.path);
         }
       }
 
@@ -88,12 +89,12 @@ export class PushService {
       stateManager.setLastFullSync(Date.now());
       stateManager.addLog(
         "info",
-        `Full sync complete: ${synced} synced, ${errors} errors`
+        t("sync.fullSyncComplete", { synced, errors })
       );
-      new Notice(`Sync complete: ${synced} files synced, ${errors} errors`);
+      new Notice(t("sync.syncCompleteNotice", { synced, errors }));
     } catch (error) {
-      stateManager.addLog("error", `Full sync failed: ${errMsg(error)}`);
-      new Notice(`Sync failed: ${errMsg(error)}`);
+      stateManager.addLog("error", t("sync.fullSyncFailed", { error: errMsg(error) }));
+      new Notice(t("sync.syncFailedNotice", { error: errMsg(error) }));
     }
 
     return { synced, errors };
@@ -109,7 +110,7 @@ export class PushService {
     let errors = 0;
 
     try {
-      stateManager.addLog("info", "Starting incremental sync");
+      stateManager.addLog("info", t("sync.startingIncrementalSync"));
 
       // Ensure folder hierarchy is up to date
       await this.deps.folders.syncAll();
@@ -130,7 +131,7 @@ export class PushService {
           }
         } catch (error) {
           errors++;
-          stateManager.addLog("error", `Incremental sync failed: ${errMsg(error)}`, file.path);
+          stateManager.addLog("error", t("sync.incrementalSyncFailed", { error: errMsg(error) }), file.path);
         }
       }
 
@@ -141,11 +142,11 @@ export class PushService {
         await this.resolveAllLinks(mdFiles);
       }
 
-      stateManager.addLog("info", `Incremental sync: ${synced} updated, ${errors} errors`);
-      new Notice(`Incremental sync: ${synced} updated, ${errors} errors`);
+      stateManager.addLog("info", t("sync.incrementalSyncComplete", { synced, errors }));
+      new Notice(t("sync.incrementalSyncNotice", { synced, errors }));
     } catch (error) {
-      stateManager.addLog("error", `Incremental sync failed: ${errMsg(error)}`);
-      new Notice(`Sync failed: ${errMsg(error)}`);
+      stateManager.addLog("error", t("sync.incrementalSyncFailed", { error: errMsg(error) }));
+      new Notice(t("sync.syncFailedNotice", { error: errMsg(error) }));
     }
 
     return { synced, errors };
@@ -159,12 +160,12 @@ export class PushService {
 
       const didSync = await this.syncFile(file, true);
       if (didSync) {
-        new Notice(`Synced: ${file.basename}`);
+        new Notice(t("sync.syncedFile", { name: file.basename }));
       }
       return didSync;
     } catch (error) {
-      this.deps.stateManager.addLog("error", `Failed to sync: ${errMsg(error)}`, file.path);
-      new Notice(`Sync failed: ${errMsg(error)}`);
+      this.deps.stateManager.addLog("error", t("sync.failedToSync", { error: errMsg(error) }), file.path);
+      new Notice(t("sync.syncFailedNotice", { error: errMsg(error) }));
       return false;
     }
   }
@@ -227,7 +228,7 @@ export class PushService {
           fileName: file.basename,
         });
 
-        stateManager.addLog("info", `Updated: ${file.path}`, file.path);
+        stateManager.addLog("info", t("sync.updated", { path: file.path }), file.path);
         return true;
       } catch (error) {
         // If the page is gone from Notion (deleted or sitting in the
@@ -237,7 +238,7 @@ export class PushService {
           stateManager.removeFileMapping(file.path);
           stateManager.addLog(
             "info",
-            `Notion page missing or archived — recreating: ${file.path}`,
+            t("sync.pageMissingRecreating", { path: file.path }),
             file.path
           );
         } else {
@@ -268,7 +269,7 @@ export class PushService {
       fileName: file.basename,
     });
 
-    stateManager.addLog("info", `Created: ${file.path}`, file.path);
+    stateManager.addLog("info", t("sync.created", { path: file.path }), file.path);
     return true;
   }
 
@@ -295,7 +296,7 @@ export class PushService {
    */
   private async resolveAllLinks(files: TFile[]): Promise<void> {
     const { app, notion, stateManager, control } = this.deps;
-    stateManager.addLog("info", "Resolving internal links...");
+    stateManager.addLog("info", t("sync.resolvingLinks"));
 
     for (const file of files) {
       if (control.aborted) break;
@@ -323,7 +324,7 @@ export class PushService {
           }
         }
       } catch (error) {
-        stateManager.addLog("warn", `Link resolution failed: ${errMsg(error)}`, file.path);
+        stateManager.addLog("warn", t("sync.linkResolutionFailed", { error: errMsg(error) }), file.path);
       }
     }
   }
@@ -339,7 +340,7 @@ export class PushService {
     for (const path of Object.keys(allMappings)) {
       if (!currentPaths.has(path)) {
         stateManager.removeFileMapping(path);
-        stateManager.addLog("info", `Removed mapping for deleted: ${path}`);
+        stateManager.addLog("info", t("sync.removedMapping", { path }));
       }
     }
   }

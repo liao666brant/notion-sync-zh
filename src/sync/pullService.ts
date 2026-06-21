@@ -8,6 +8,7 @@ import type { ProgressReporter } from "./progressReporter";
 import type { SyncControl } from "./syncControl";
 import type { WikiLinkRestorer } from "./wikiLinkRestorer";
 import { errMsg, hashContent } from "../utils";
+import { t } from "../i18n";
 
 export interface PullServiceDeps {
   app: App;
@@ -71,7 +72,7 @@ export class PullService {
       lastSyncedAt: Date.now(),
     });
 
-    stateManager.addLog("info", `Pulled from Notion: ${file.path}`, file.path);
+    stateManager.addLog("info", t("sync.pulledFile", { path: file.path }), file.path);
     return "pulled";
   }
 
@@ -83,8 +84,8 @@ export class PullService {
     let pulled = 0, skipped = 0, errors = 0;
 
     try {
-      stateManager.addLog("info", "Starting pull from Notion");
-      new Notice("Pulling from Notion...");
+      stateManager.addLog("info", t("sync.startingPull"));
+      new Notice(t("sync.pullingNotice"));
 
       const allMappings = stateManager.getAllFileMappings();
       const entries = Object.entries(allMappings);
@@ -107,20 +108,20 @@ export class PullService {
 
           if ((i + 1) % 5 === 0 || i === entries.length - 1) {
             const pct = Math.round(((i + 1) / total) * 100);
-            progress.report(`Pulling ${i + 1}/${total}...`, pct);
+            progress.report(t("sync.pullingProgress", { i: i + 1, total }), pct);
           }
         } catch (e) {
           errors++;
-          stateManager.addLog("error", `Pull failed: ${errMsg(e)}`, filePath);
+          stateManager.addLog("error", t("sync.pullFailed", { error: errMsg(e) }), filePath);
         }
       }
 
-      const msg = `Pull complete: ${pulled} updated, ${errors} errors`;
+      const msg = t("sync.pullComplete", { pulled, errors });
       stateManager.addLog("info", msg);
       new Notice(msg);
     } catch (e) {
-      stateManager.addLog("error", `Pull failed: ${errMsg(e)}`);
-      new Notice(`Pull failed: ${errMsg(e)}`);
+      stateManager.addLog("error", t("sync.pullFailed", { error: errMsg(e) }));
+      new Notice(t("sync.pullFailed", { error: errMsg(e) }));
     }
 
     return { pulled, skipped, errors };

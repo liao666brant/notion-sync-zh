@@ -7,6 +7,7 @@ import { LinkResolver } from "./linkResolver";
 import { AttachmentUploader } from "./attachmentUploader";
 import type { StateManager } from "./stateManager";
 import type { PluginSettings } from "./types";
+import { t } from "./i18n";
 import type {
   ImportResult,
   PullFileResult,
@@ -173,8 +174,8 @@ export class SyncEngine {
    */
   async rebuildHierarchy(): Promise<void> {
     await this.runExclusive(undefined, async () => {
-      this.stateManager.addLog("info", "Rebuilding Notion hierarchy");
-      new Notice("Rebuilding hierarchy... This may take a while.");
+      this.stateManager.addLog("info", t("sync.rebuildingHierarchy"));
+      new Notice(t("sync.rebuildingHierarchyNotice"));
 
       this.stateManager.reset();
       await this.push.fullVault();
@@ -231,7 +232,7 @@ export class SyncEngine {
     if (!this.validateSettings()) return busyResult;
 
     if (!this.control.begin()) {
-      new Notice("Sync already in progress");
+      new Notice(t("sync.syncAlreadyInProgress"));
       return busyResult;
     }
     try {
@@ -244,11 +245,11 @@ export class SyncEngine {
   /** Validate that required settings are configured. */
   private validateSettings(): boolean {
     if (!this.settings.notionToken) {
-      new Notice("Please configure your Notion API token in settings");
+      new Notice(t("sync.configureTokenFirst"));
       return false;
     }
     if (!this.settings.rootPageId) {
-      new Notice("Please configure your root Notion page ID in settings");
+      new Notice(t("sync.configureRootPageFirst"));
       return false;
     }
     return true;

@@ -11,6 +11,7 @@ import type { SyncControl } from "./syncControl";
 import type { VaultFileNamer } from "./vaultFileNamer";
 import type { WikiLinkRestorer } from "./wikiLinkRestorer";
 import { errMsg, hashContent, sanitizeFileName } from "../utils";
+import { t } from "../i18n";
 
 const MAX_TRAVERSAL_DEPTH = 20;
 
@@ -45,8 +46,8 @@ export class NotionTreeImporter {
     let errors = 0;
 
     try {
-      stateManager.addLog("info", "Starting pull new pages from Notion");
-      new Notice("Pulling new pages from Notion...");
+      stateManager.addLog("info", t("sync.startingPullNewPages"));
+      new Notice(t("sync.pullingNewPagesNotice"));
 
       // Build set of all already-known Notion page IDs
       const knownIds = new Set<string>();

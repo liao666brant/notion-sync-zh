@@ -14,6 +14,7 @@ import {
 import type { PluginSettings, SyncState, SyncHistory } from "./types";
 import { StatusBarController, type StatusBarState } from "./ui/statusBar";
 import { ExplorerDecorator } from "./ui/explorerDecorator";
+import { t } from "./i18n";
 
 /** Persisted data shape in data.json */
 interface PersistedData {
@@ -62,20 +63,20 @@ export default class NotionSyncPlugin extends Plugin {
     );
 
     // Ribbon icon — opens the sync panel
-    this.addRibbonIcon("upload-cloud", "Notion sync", () => {
+    this.addRibbonIcon("upload-cloud", t("commands.ribbonTooltip"), () => {
       void this.activateSyncPanel();
     });
 
     // Register commands
     this.addCommand({
       id: "sync-vault",
-      name: "Sync entire vault to Notion",
+      name: t("commands.syncFullVault"),
       callback: () => { void this.syncFullVault(); },
     });
 
     this.addCommand({
       id: "sync-current-file",
-      name: "Sync current note to Notion",
+      name: t("commands.syncCurrentFile"),
       editorCallback: (_editor, ctx) => {
         const file = ctx.file;
         if (file) void this.pushFile(file);
@@ -84,31 +85,31 @@ export default class NotionSyncPlugin extends Plugin {
 
     this.addCommand({
       id: "sync-incremental",
-      name: "Sync changed files to Notion",
+      name: t("commands.syncIncremental"),
       callback: () => { void this.syncIncremental(); },
     });
 
     this.addCommand({
       id: "rebuild-hierarchy",
-      name: "Rebuild Notion hierarchy",
+      name: t("commands.rebuildHierarchy"),
       callback: () => { void this.rebuildHierarchy(); },
     });
 
     this.addCommand({
       id: "open-sync-log",
-      name: "Open sync log",
+      name: t("commands.openSyncLog"),
       callback: () => this.openSyncLog(),
     });
 
     this.addCommand({
       id: "open-sync-panel",
-      name: "Open sync panel",
+      name: t("commands.openSyncPanel"),
       callback: () => { void this.activateSyncPanel(); },
     });
 
     this.addCommand({
       id: "pull-current-file",
-      name: "Pull current note from Notion",
+      name: t("commands.pullCurrentFile"),
       editorCallback: (_editor, ctx) => {
         if (ctx.file) void this.pullCurrentFilePublic();
       },
@@ -116,13 +117,13 @@ export default class NotionSyncPlugin extends Plugin {
 
     this.addCommand({
       id: "pull-all",
-      name: "Pull all notes from Notion",
+      name: t("commands.pullAll"),
       callback: () => { void this.pullAllPublic(); },
     });
 
     this.addCommand({
       id: "pull-new-pages",
-      name: "Pull new pages from Notion",
+      name: t("commands.pullNewPages"),
       callback: () => { void this.pullNewPagesPublic(); },
     });
 
@@ -219,16 +220,16 @@ export default class NotionSyncPlugin extends Plugin {
   /** Test connection to Notion */
   async testConnection(): Promise<boolean> {
     if (!this.settings.notionToken || !this.settings.rootPageId) {
-      new Notice("Please fill in token and root page ID first");
+      new Notice(t("notices.fillTokenAndPageId"));
       return false;
     }
     const client = new NotionClient(this.settings.notionToken);
     try {
       const ok = await client.testConnection(this.settings.rootPageId);
-      new Notice(ok ? "Connection successful!" : "Connection failed: page not found or not shared with integration.");
+      new Notice(ok ? t("notices.connectionSuccessful") : t("notices.connectionFailedNotFound"));
       return ok;
     } catch (e) {
-      new Notice(`Connection failed: ${e instanceof Error ? e.message : String(e)}`);
+      new Notice(t("notices.connectionFailed", { error: e instanceof Error ? e.message : String(e) }));
       console.error("[NotionSync] testConnection error:", e);
       return false;
     } finally {
@@ -258,7 +259,7 @@ export default class NotionSyncPlugin extends Plugin {
   async syncFullVaultPublic(): Promise<void> {
     this.updateStatusBar("syncing");
     const panel = this.getActiveSyncPanel();
-    panel?.showProgress("Starting...", 0);
+    panel?.showProgress(t("progress.starting"), 0);
     try {
       await this.syncFullVault();
       this.updateStatusBar("idle");
@@ -273,7 +274,7 @@ export default class NotionSyncPlugin extends Plugin {
   async syncIncrementalPublic(): Promise<void> {
     this.updateStatusBar("syncing");
     const panel = this.getActiveSyncPanel();
-    panel?.showProgress("Starting incremental sync...", 0);
+    panel?.showProgress(t("progress.startingIncrementalSync"), 0);
     try {
       await this.syncIncremental();
       this.updateStatusBar("idle");
@@ -289,7 +290,7 @@ export default class NotionSyncPlugin extends Plugin {
     this.updateStatusBar("syncing");
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new Notice("No active file");
+      new Notice(t("notices.noActiveFile"));
       this.updateStatusBar("idle");
       return;
     }
@@ -307,18 +308,18 @@ export default class NotionSyncPlugin extends Plugin {
     this.updateStatusBar("syncing");
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new Notice("No active file");
+      new Notice(t("notices.noActiveFile"));
       this.updateStatusBar("idle");
       return;
     }
     try {
       const result = await this.syncEngine.pullCurrentFile(file);
       const messages: Record<string, string> = {
-        pulled:     `Pulled from Notion: ${file.basename}`,
-        no_change:  `Already up to date: ${file.basename}`,
-        not_mapped: `Not synced yet — push to Notion first: ${file.basename}`,
+        pulled:     t("notices.pulledFromNotion", { name: file.basename }),
+        no_change:  t("notices.alreadyUpToDate", { name: file.basename }),
+        not_mapped: t("notices.notSyncedYet", { name: file.basename }),
       };
-      new Notice(messages[result] ?? `Done: ${file.basename}`);
+      new Notice(messages[result] ?? t("notices.done", { name: file.basename }));
       if (result === "pulled") {
         this.decorator.clearDirty(file.path);
       }
@@ -333,7 +334,7 @@ export default class NotionSyncPlugin extends Plugin {
   async pullAllPublic(): Promise<void> {
     this.updateStatusBar("syncing");
     const panel = this.getActiveSyncPanel();
-    panel?.showProgress("Starting pull...", 0);
+    panel?.showProgress(t("progress.startingPull"), 0);
     this.syncEngine.setProgressCallback((text, pct) => panel?.showProgress(text, pct));
     try {
       await this.syncEngine.pullAll();
@@ -353,7 +354,7 @@ export default class NotionSyncPlugin extends Plugin {
   async pullNewPagesPublic(): Promise<void> {
     this.updateStatusBar("syncing");
     const panel = this.getActiveSyncPanel();
-    panel?.showProgress("Starting pull new pages...", 0);
+    panel?.showProgress(t("progress.startingPullNewPages"), 0);
     this.syncEngine.setProgressCallback((text, pct) => panel?.showProgress(text, pct));
     try {
       await this.syncEngine.pullNewPages();
@@ -398,16 +399,16 @@ export default class NotionSyncPlugin extends Plugin {
   async rollbackFile(historyId: string): Promise<void> {
     const entry = this.stateManager.getHistoryEntry(historyId);
     if (!entry?.snapshot) {
-      new Notice("No snapshot available");
+      new Notice(t("notices.noSnapshot"));
       return;
     }
     const file = this.app.vault.getAbstractFileByPath(entry.filePath);
     if (!(file instanceof TFile)) {
-      new Notice("File not found");
+      new Notice(t("notices.fileNotFound"));
       return;
     }
     await this.app.vault.modify(file, entry.snapshot);
-    new Notice(`Rolled back: ${entry.fileName}`);
+    new Notice(t("notices.rolledBack", { name: entry.fileName }));
   }
 
   openHistoryModal(): void {
@@ -435,7 +436,7 @@ export default class NotionSyncPlugin extends Plugin {
   private async syncFullVault(): Promise<void> {
     this.updateStatusBar("syncing");
     const panel = this.getActiveSyncPanel();
-    panel?.showProgress("Starting full sync...", 0);
+    panel?.showProgress(t("progress.startingFullSync"), 0);
     this.syncEngine.setProgressCallback((text, pct) => panel?.showProgress(text, pct));
     try {
       await this.syncEngine.syncFullVault();

@@ -2,6 +2,7 @@ import { requestUrl } from "obsidian";
 import { RateLimiter } from "./rateLimiter";
 import type { NotionBlock, NotionApiBlock } from "./types";
 import type { NotionApi } from "./sync/contracts";
+import { t } from "./i18n";
 
 const NOTION_API = "https://api.notion.com/v1";
 const NOTION_VERSION = "2022-06-28";
@@ -220,7 +221,7 @@ export class NotionClient implements NotionApi {
     } catch {
       // ignore parse errors, return default below
     }
-    return "Untitled";
+    return t("utils.untitled");
   }
 
   /** Archive (soft-delete) a page */
@@ -279,7 +280,7 @@ export class NotionClient implements NotionApi {
           const childPage = block.child_page as { title?: string } | undefined;
           results.push({
             id: block.id,
-            title: childPage?.title ?? "Untitled",
+            title: childPage?.title ?? t("utils.untitled"),
           });
         }
       }

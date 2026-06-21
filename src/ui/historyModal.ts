@@ -2,6 +2,7 @@ import { App, Modal } from "obsidian";
 import type NotionSyncPlugin from "../main";
 import type { SyncHistoryEntry } from "../types";
 import { formatTimeAgo } from "../utils";
+import { t } from "../i18n";
 
 /**
  * Modal that displays sync history with rollback support.
@@ -19,13 +20,13 @@ export class HistoryModal extends Modal {
     contentEl.empty();
     contentEl.addClass("notion-sync-history-modal");
 
-    contentEl.createEl("h2", { text: "Sync history" });
+    contentEl.createEl("h2", { text: t("history.title") });
 
     const entries = this.plugin.stateManager.getHistory().slice(0, 50);
 
     if (entries.length === 0) {
       contentEl.createEl("p", {
-        text: "No sync history yet.",
+        text: t("history.empty"),
         cls: "notion-sync-history-empty",
       });
       return;
@@ -59,9 +60,9 @@ export class HistoryModal extends Modal {
 
     const metaEl = infoEl.createDiv({ cls: "notion-sync-history-meta" });
     const opLabels: Record<string, string> = {
-      push: "Pushed to Notion",
-      pull: "Pulled from Notion",
-      "pull-new": "New page pulled",
+      push: t("history.pushedToNotion"),
+      pull: t("history.pulledFromNotion"),
+      "pull-new": t("history.newPagePulled"),
     };
     const opLabel = opLabels[entry.operation] || entry.operation;
     const timeAgo = formatTimeAgo(entry.timestamp);
@@ -70,18 +71,18 @@ export class HistoryModal extends Modal {
     // Rollback button (only for pull entries that have a snapshot)
     if (entry.operation === "pull" && entry.snapshot) {
       const rollbackBtn = row.createEl("button", {
-        text: "↩ rollback",
+        text: t("history.rollback"),
         cls: "notion-sync-history-rollback-btn",
       });
       rollbackBtn.addEventListener("click", () => {
         void (async () => {
           rollbackBtn.setAttr("disabled", "true");
-          rollbackBtn.setText("Rolling back...");
+          rollbackBtn.setText(t("history.rollingBack"));
           try {
             await this.plugin.rollbackFile(entry.id);
-            rollbackBtn.setText("Done");
+            rollbackBtn.setText(t("history.done"));
           } catch {
-            rollbackBtn.setText("Failed");
+            rollbackBtn.setText(t("history.failed"));
           }
         })();
       });
